@@ -64,7 +64,7 @@ export function drawHud(ctx, world, viewW, viewH, input, state) {
   }
   ctx.font = '13px system-ui, sans-serif';
   ctx.fillStyle = 'rgba(255,255,255,0.6)';
-  ctx.fillText(districtAt(player.x, player.y), 28, mission ? 100 : 78);
+  ctx.fillText(districtAt(player.x, player.y), 28, mission ? 116 : 94);
 
   drawMinimap(ctx, world, viewW, viewH);
   drawVitals(ctx, world, viewW, viewH);
@@ -174,11 +174,11 @@ function drawFlashes(ctx, world, viewW, viewH) {
   world.flashes.forEach((f, i) => {
     const alpha = f.t < 0.2 ? f.t / 0.2 : f.t > f.dur - 0.6 ? (f.dur - f.t) / 0.6 : 1;
     ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
-    ctx.font = '900 44px system-ui, sans-serif';
+    ctx.font = '900 40px system-ui, sans-serif';
     ctx.fillStyle = '#0e2a3a';
-    ctx.fillText(f.text, viewW / 2 + 3, viewH * 0.3 + i * 54 + 3);
+    ctx.fillText(f.text, viewW / 2 + 3, viewH * 0.3 + i * 62 + 3);
     ctx.fillStyle = f.color;
-    ctx.fillText(f.text, viewW / 2, viewH * 0.3 + i * 54);
+    ctx.fillText(f.text, viewW / 2, viewH * 0.3 + i * 62);
   });
   ctx.globalAlpha = 1;
 }

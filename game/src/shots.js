@@ -37,8 +37,8 @@ function spawnChasers(world, count) {
   for (let i = 0; i < count; i++) {
     const behind = i % 2 === 0 ? -1 : 1;
     const car = makeCar(
-      player.x - Math.cos(player.angle) * (180 + i * 90) + behind * 60,
-      player.y - Math.sin(player.angle) * (180 + i * 90),
+      player.x - Math.cos(player.angle) * (140 + i * 70) + behind * 60,
+      player.y - Math.sin(player.angle) * (140 + i * 70),
       player.angle,
       { driver: 'cop', color: '#14213d', siren: true, cruise: 430 },
     );
@@ -53,6 +53,15 @@ export function stageShot(name, world) {
   const roadY = world.city.roadsH[3];
   if (name === 'street') {
     putPlayerInCar(world, 1250, roadY, 0);
+    // A few neighbours on the same road so the frame reads as a living street.
+    for (let i = 0; i < 3; i++) {
+      const car = makeCar(1500 + i * 220, roadY + (i % 2 === 0 ? -24 : 24), i % 2 === 0 ? 0 : Math.PI, {
+        driver: 'traffic', color: ['#457b9d', '#f4a261', '#2a9d8f'][i],
+        road: { dir: 'h', at: roadY }, roadDir: i % 2 === 0 ? 1 : -1, lane: i % 2 === 0 ? 1 : -1, cruise: 150,
+      });
+      car.speed = 150;
+      world.cars.push(car);
+    }
     world.say('Downtown, midday. The city is yours — drive anywhere.');
     return { screen: 'playing', steps: 180, driving: true };
   }
@@ -60,7 +69,6 @@ export function stageShot(name, world) {
     putPlayerInCar(world, 1250, roadY, 0);
     world.missions.start(3); // Heat Wave: three stars, patrol cars inbound.
     spawnChasers(world, 4);
-    world.flash('3 STARS — LOSE THE HEAT', '#ff5964');
     return { screen: 'playing', steps: 150, driving: true };
   }
   if (name === 'mission') {
@@ -68,7 +76,6 @@ export function stageShot(name, world) {
     const at = world.city.landmarks.warehouse;
     world.debug.teleport(at.x - 260, at.y + 40);
     world.player.aimAngle = 0;
-    world.say('Marisol Vega: The Dockside crew owes twelve hundred. Collect it.');
     return { screen: 'playing', steps: 90, driving: false };
   }
   // 'start' and anything else: the title screen over a living city.
