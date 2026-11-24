@@ -3,17 +3,75 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Block Dodger</title>
+<title>Neon Harbor — Open-World Crime Game</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230e2a3a'/%3E%3Cpath d='M4 24h24v-4H4z' fill='%23ffd166'/%3E%3Cpath d='M8 20V10h6v10M18 20v-8h6v8' fill='%23ff6b6b'/%3E%3C/svg%3E">
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #11141b; }
-  #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
-  /* Read aloud, never shown: the status line screen readers announce. */
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0e2a3a; font-family: "Segoe UI", system-ui, -apple-system, sans-serif; }
+  #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: crosshair; }
+  .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; color: #f4f1e8; background: radial-gradient(ellipse at 50% 30%, rgba(14,42,58,.55), rgba(8,18,28,.92)); z-index: 10; }
+  .hidden { display: none !important; }
+  .kicker { letter-spacing: .45em; font-size: 13px; color: #ffd166; text-transform: uppercase; margin-bottom: 6px; }
+  h1.title { font-size: clamp(44px, 9vw, 96px); margin: 0; line-height: .95; font-weight: 900; letter-spacing: -.02em; text-shadow: 0 6px 0 #ff6b6b, 0 12px 28px rgba(0,0,0,.6); }
+  h1.title span { color: #4ecdc4; }
+  .tagline { font-size: 17px; color: #cfe8ef; margin: 14px 0 4px; max-width: 560px; line-height: 1.5; }
+  .story { font-size: 14px; color: #9db8c4; max-width: 560px; line-height: 1.6; margin: 8px 0 18px; }
+  .btn { display: inline-block; font-size: 18px; font-weight: 700; letter-spacing: .06em; color: #0e2a3a; background: #ffd166; border: none; border-radius: 8px; padding: 13px 34px; margin: 6px; cursor: pointer; box-shadow: 0 4px 0 #b98a1d, 0 10px 24px rgba(0,0,0,.45); }
+  .btn:hover { background: #ffe08a; }
+  .btn.secondary { background: transparent; color: #f4f1e8; border: 2px solid #4ecdc4; box-shadow: none; }
+  .btn.secondary:hover { background: rgba(78,205,196,.15); }
+  .controls { display: grid; grid-template-columns: auto auto; gap: 4px 18px; font-size: 13px; color: #cfe8ef; margin-top: 18px; text-align: left; background: rgba(0,0,0,.35); padding: 14px 20px; border-radius: 10px; }
+  .controls b { color: #ffd166; font-weight: 700; }
+  .foot { margin-top: 16px; font-size: 12px; color: #7fa3b0; letter-spacing: .08em; }
+  #end-title { font-size: clamp(40px, 8vw, 80px); font-weight: 900; margin: 0; text-shadow: 0 6px 24px rgba(0,0,0,.6); }
+  #end-sub { font-size: 17px; color: #cfe8ef; margin: 10px 0 20px; }
+  #pause-screen h2 { font-size: 48px; margin: 0 0 8px; letter-spacing: .1em; }
   #status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 </style>
 </head>
 <body>
-<canvas id="game" aria-label="Block Dodger: move the paddle left and right to dodge falling blocks and catch coins"></canvas>
+<canvas id="game" aria-label="Neon Harbor: a top-down open-world crime game. Drive, explore the city, and run missions."></canvas>
 <p id="status" role="status" aria-live="polite"></p>
+
+<div id="title-screen" class="overlay">
+  <div class="kicker">A sun-soaked open-world crime game</div>
+  <h1 class="title">NEON <span>HARBOR</span></h1>
+  <p class="tagline">Steal cars. Outrun the law. Take the city, one job at a time.</p>
+  <p class="story">Kai Mercer came back to Neon Harbor with an empty wallet and a fast right
+  foot. The fixer Marisol Vega has work for a driver who asks no questions —
+  six jobs stand between Kai and the top of the Harbor syndicate.</p>
+  <div>
+    <button id="btn-start" class="btn">START ENGINE</button>
+    <button id="btn-continue" class="btn secondary hidden">CONTINUE</button>
+  </div>
+  <div class="controls">
+    <span><b>W A S D</b></span><span>Move / drive</span>
+    <span><b>Mouse + click</b></span><span>Aim / shoot</span>
+    <span><b>E</b></span><span>Enter / exit car</span>
+    <span><b>Shift / Space</b></span><span>Sprint / handbrake</span>
+    <span><b>R</b></span><span>Reload</span>
+    <span><b>P / Esc</b></span><span>Pause</span>
+  </div>
+  <div class="foot">NEON HARBOR &middot; AN ORIGINAL GAME &middot; NO NETWORK NEEDED</div>
+</div>
+
+<div id="pause-screen" class="overlay hidden">
+  <h2>PAUSED</h2>
+  <p class="tagline">The city waits for no one. Well — right now it does.</p>
+  <div>
+    <button id="btn-resume" class="btn">RESUME</button>
+    <button id="btn-restart" class="btn secondary">RESTART RUN</button>
+  </div>
+</div>
+
+<div id="end-screen" class="overlay hidden">
+  <h2 id="end-title">WASTED</h2>
+  <p id="end-sub"></p>
+  <div>
+    <button id="btn-retry" class="btn">TRY AGAIN</button>
+    <button id="btn-menu" class="btn secondary">MAIN MENU</button>
+  </div>
+</div>
+
 <script type="module" src="./src/main.js"></script>
 </body>
 </html>
