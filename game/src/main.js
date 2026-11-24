@@ -46,7 +46,7 @@ function runShot(name) {
   const scene = stageShot(name, world);
   const state = world.state;
   const ui = {
-    mouse: { x: 640, y: 360 },
+    mouse: name === 'street' ? { x: 880, y: 250 } : { x: 640, y: 360 },
     objective: world.currentObjective(),
     hint: name === 'street' ? 'Press E to steal the Solstice GT' : null,
     dt: 0,

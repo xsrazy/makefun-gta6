@@ -67,20 +67,21 @@ function stageCover(world) {
   state.cars.push(car);
   putPlayerInCar(state, car);
   addHeat(state, 60);
-  spawnPoliceBehind(state, 2, -260, 30);
+  spawnPoliceBehind(state, 2, -170, 30);
   world.beginMission(missionById(2));
-  runSteps(world, 2.6, (s) => driveControls(s, s.player.x + 900, 1500));
+  runSteps(world, 2.2, (s) => driveControls(s, s.player.x + 900, 1500));
   return { screen: SCREEN_PLAY };
 }
 
 function stageStreet(world) {
   const state = world.state;
   // On foot in Sun Plaza at lunchtime: crowds, traffic, and a car worth stealing.
-  state.player.x = PLACES.plaza.x;
-  state.player.y = PLACES.plaza.y;
+  // (Just off the road, on the sidewalk — not standing in traffic.)
+  state.player.x = PLACES.plaza.x + 80;
+  state.player.y = PLACES.plaza.y + 60;
   state.player.angle = Math.PI / 2;
-  state.camera.x = PLACES.plaza.x;
-  state.camera.y = PLACES.plaza.y;
+  state.camera.x = PLACES.plaza.x + 80;
+  state.camera.y = PLACES.plaza.y + 60;
   for (let i = 0; i < 22; i += 1) {
     const ped = createPed(
       PLACES.plaza.x + (state.random() - 0.5) * 700,
@@ -103,7 +104,8 @@ function stageStreet(world) {
 
 function stageChase(world) {
   const state = world.state;
-  // Four stars on the coastal road: the Sunset Getaway, cops boxing in from behind.
+  // Four stars on the coastal road: the Sunset Getaway, cops closing in from behind
+  // and one more coming head-on down the same road.
   const car = createCar('sports', 3000, 3250, Math.PI, '#1f6fff', 'parked');
   car.id = state.nextCarId++;
   car.speed = 520;
@@ -111,8 +113,12 @@ function stageChase(world) {
   putPlayerInCar(state, car);
   world.beginMission(missionById(5));
   addHeat(state, 90);
-  spawnPoliceBehind(state, 3, 280, 20);
-  runSteps(world, 3.4, (s) => driveControls(s, s.player.x - 900, 3250));
+  spawnPoliceBehind(state, 2, 170, 20);
+  const headOn = createCar('cruiser', 2180, 3250, 0, '#101418', 'police');
+  headOn.id = state.nextCarId++;
+  headOn.speed = 420;
+  state.cars.push(headOn);
+  runSteps(world, 2.4, (s) => driveControls(s, s.player.x - 900, 3250));
   return { screen: SCREEN_PLAY };
 }
 

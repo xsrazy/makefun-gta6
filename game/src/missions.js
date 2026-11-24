@@ -32,7 +32,7 @@ export const MISSIONS = [
       'Marina: Walk in, pick it up, bring it to my office. And Danny — do not open it.',
     ],
     steps: [
-      { type: 'goto', x: PLACES.docks.x, y: PLACES.docks.y, radius: 80, label: 'Go to the Docks' },
+      { type: 'goto', x: PLACES.docks.x, y: PLACES.docks.y, radius: 200, label: 'Go to the Docks' },
       { type: 'collect', x: PLACES.docks.x, y: PLACES.docks.y, radius: 46, label: 'Pick up the package' },
       { type: 'goto', x: PLACES.office.x, y: PLACES.office.y, radius: 90, label: 'Deliver it to Marina\u2019s Office' },
     ],
@@ -93,6 +93,7 @@ export const MISSIONS = [
     reward: 3000,
     intro: [
       'Marina: Voss and his Vultures are moving product through the docks tonight.',
+      'Marina: I called in a favor — the SBPD is looking the other way tonight.',
       'Marina: End it, Danny. Take them all down — then come home.',
       'Marina: Your pistol is loaded. Make it count.',
     ],
@@ -101,7 +102,7 @@ export const MISSIONS = [
       { type: 'kill', count: 6, label: 'Take down the Vultures (0/6)' },
       { type: 'goto', x: PLACES.office.x, y: PLACES.office.y, radius: 90, label: 'Report back to Marina' },
     ],
-    setup: { spawnEnemies: 6 },
+    setup: { spawnEnemies: 6, clearHeat: true },
     outro: 'Marina: It is done. Solmar Bay is ours again, Danny. All of it.',
   },
 ];

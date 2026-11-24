@@ -4,7 +4,7 @@
 // world knows nothing about screens or sound: it returns what happened as event flags
 // and the boot code reacts (sound, banners, screen changes).
 
-import { CAR_TYPES, GARAGE, PACKAGES, PEDESTRIANS, PISTOL, PLAYER, SHORE, STEP, TRAFFIC, WANTED, WORLD } from './config.js';
+import { GARAGE, PACKAGES, PEDESTRIANS, PISTOL, PLAYER, SHORE, TRAFFIC, WANTED, WORLD } from './config.js';
 import { PLACES, createCity, randomRoadPoint, randomSidewalkPoint, resolveSolidCollision } from './city.js';
 import { createRandom } from './random.js';
 import { createCar, assignLane, collideCars, damageCar, driveCar, updateTrafficCar } from './vehicles.js';
@@ -171,6 +171,10 @@ export function createWorld(seed, saveData) {
     startMission(state.mission, mission);
     const setup = mission.setup ?? {};
     if (setup.heat) addHeat(state, setup.heat);
+    if (setup.clearHeat) {
+      state.heat = 0;
+      state.wanted = 0;
+    }
     if (setup.spawnRepoCar) {
       const car = createCar('coupe', PLACES.stadium.x + 40, PLACES.stadium.y + 60, 0, '#d8a03c', 'parked');
       car.id = 'repo';
@@ -215,6 +219,14 @@ export function createWorld(seed, saveData) {
     state.mission.active = null;
     state.enemies = [];
     if (state.repoCar) {
+      // Handing the coupe over: if Danny is still sitting in it, he gets out first,
+      // or he would be left driving a car the world no longer has.
+      if (state.player.car === state.repoCar) {
+        state.player.car = null;
+        state.player.x = state.repoCar.x + 40;
+        state.player.y = state.repoCar.y;
+        addMessage('The coupe is Marina\u2019s now.');
+      }
       state.cars = state.cars.filter((c) => c !== state.repoCar);
       state.repoCar = null;
     }
@@ -422,7 +434,7 @@ export function createWorld(seed, saveData) {
         firePistol(state.bullets, enemy.x, enemy.y, enemy.angle + (random() - 0.5) * 0.3, 'enemy', random);
       }
     }
-    state.enemies = state.enemies.filter((e) => e.health > 0 || e.deathTimer > 0);
+    state.enemies = state.enemies.filter((e) => e.health > 0);
   }
 
   function updateCars(dt) {

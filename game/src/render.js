@@ -4,7 +4,6 @@
 // hud.js and draw on top of this, in screen space.
 
 import { PALETTE, ROADS, SHORE, VIEW, WORLD } from './config.js';
-import { districtAt } from './city.js';
 
 const ZOOM = 1.1;
 const HALF_ROAD = ROADS.width / 2;
@@ -128,12 +127,11 @@ export function createRenderer(canvas) {
       ctx.fillRect(0, cy - HALF_ROAD, WORLD.width, ROADS.width);
     }
     ctx.fillStyle = PALETTE.laneMark;
-    const dashOff = (state.time * 0) % 44;
     for (const cx of ROADS.vertical) {
-      for (let y = dashOff; y < SHORE.sandTop; y += 44) ctx.fillRect(cx - 2, y, 4, 24);
+      for (let y = 0; y < SHORE.sandTop; y += 44) ctx.fillRect(cx - 2, y, 4, 24);
     }
     for (const cy of ROADS.horizontal) {
-      for (let x = dashOff; x < WORLD.width; x += 44) ctx.fillRect(x, cy - 2, 24, 4);
+      for (let x = 0; x < WORLD.width; x += 44) ctx.fillRect(x, cy - 2, 24, 4);
     }
     // Crosswalks at the downtown intersections.
     ctx.fillStyle = '#e8e8e8';

@@ -231,7 +231,7 @@ export function createHud() {
       const kmh = Math.round(Math.abs(p.car.speed) * 0.32);
       text(ctx, `${kmh}`, VIEW.width - 24, VIEW.height - 30, 44, PALETTE.text, 'right', 800);
       text(ctx, 'km/h', VIEW.width - 24, VIEW.height - 8, 13, PALETTE.muted, 'right', 600);
-      text(ctx, p.car.type.name, VIEW.width - 110, VIEW.height - 30, 15, PALETTE.muted, 'right', 600);
+      text(ctx, p.car.type.name, VIEW.width - 24, VIEW.height - 100, 15, PALETTE.muted, 'right', 600);
       const cw = 150;
       ctx.fillStyle = 'rgba(0,0,0,0.55)';
       roundRectPath(ctx, VIEW.width - 24 - cw, VIEW.height - 78, cw, 10, 5);
@@ -274,7 +274,7 @@ export function createHud() {
     ctx.globalAlpha = 1;
   }
 
-  function drawObjectiveArrow(ctx, state, objective, toWorld) {
+  function drawObjectiveArrow(ctx, state, objective) {
     if (!objective) return;
     const p = state.player;
     const screenPos = {
@@ -282,11 +282,27 @@ export function createHud() {
       y: VIEW.height / 2 + (objective.y - state.camera.y) * 1.1,
     };
     if (screenPos.x > 40 && screenPos.x < VIEW.width - 40 && screenPos.y > 40 && screenPos.y < VIEW.height - 40) return;
+    // Off-screen: pin the arrow to the edge of the screen, in the objective's direction.
     const angle = Math.atan2(objective.y - p.y, objective.x - p.x);
-    const cx = VIEW.width / 2 + Math.cos(angle) * 300;
-    const cy = VIEW.height / 2 + Math.sin(angle) * 200;
+    const cx = VIEW.width / 2;
+    const cy = VIEW.height / 2;
+    const margin = 46;
+    const dx = Math.cos(angle);
+    const dy = Math.sin(angle);
+    const tx = dx !== 0 ? (VIEW.width / 2 - margin) / Math.abs(dx) : Infinity;
+    const ty = dy !== 0 ? (VIEW.height / 2 - margin) / Math.abs(dy) : Infinity;
+    const t = Math.min(tx, ty);
+    let ax = cx + dx * t;
+    let ay = cy + dy * t;
+    let labelDy = 26;
+    // Never sit on the minimap: hop just above it when the edge point lands there,
+    // and put the distance above the arrow instead of under it.
+    if (ax < MAP.x + MAP.w + 30 && ay > MAP.y - 20) {
+      ay = MAP.y - 34;
+      labelDy = -14;
+    }
     ctx.save();
-    ctx.translate(cx, cy);
+    ctx.translate(ax, ay);
     ctx.rotate(angle);
     ctx.fillStyle = PALETTE.mission;
     ctx.beginPath();
@@ -297,7 +313,7 @@ export function createHud() {
     ctx.fill();
     ctx.restore();
     const dist = Math.round(Math.hypot(objective.x - p.x, objective.y - p.y) / 10) * 10;
-    text(ctx, `${dist}m`, cx, cy + 26, 13, PALETTE.mission, 'center', 700);
+    text(ctx, `${dist}m`, ax, ay + labelDy, 13, PALETTE.mission, 'center', 700);
   }
 
   function drawCrosshair(ctx, mouse) {
@@ -369,7 +385,7 @@ export function createHud() {
       drawDialog(ctx, state);
       drawBanner(ctx, state);
       if (!state.player.car) drawCrosshair(ctx, ui.mouse);
-      // District arrival card.
+      // District arrival card, bottom-right above the speedometer.
       const district = districtAt(state.player.x, state.player.y);
       if (district.name !== lastDistrict) {
         lastDistrict = district.name;
@@ -378,7 +394,7 @@ export function createHud() {
       if (districtTimer > 0) {
         districtTimer -= ui.dt;
         ctx.globalAlpha = Math.min(1, districtTimer);
-        text(ctx, district.name, VIEW.width / 2, 120, 34, PALETTE.text, 'center', 800);
+        text(ctx, district.name, VIEW.width - 24, VIEW.height - 132, 30, PALETTE.text, 'right', 800);
         ctx.globalAlpha = 1;
       }
     },

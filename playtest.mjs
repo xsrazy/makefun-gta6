@@ -105,6 +105,8 @@ async function main() {
     await cdp.send('Page.enable');
     await cdp.send('Log.enable');
     await cdp.send('Network.enable');
+    // --window-size sets the outer window; force the viewport itself to 1280x720.
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 720, deviceScaleFactor: 1, mobile: false });
 
     const errors = [];
     const requests = [];
