@@ -12,8 +12,8 @@ export const PLACES = {
   garage: { x: 1250, y: 1250, name: 'Solano Garage', blurb: 'Marina\u2019s workshop' },
   office: { x: 2450, y: 1150, name: 'Marina\u2019s Office', blurb: 'The fixer\u2019s den' },
   docks: { x: 520, y: 3080, name: 'The Docks', blurb: 'Crates and gulls' },
-  hospital: { x: 3650, y: 650, name: 'Bay General Hospital', blurb: 'You wake up here' },
-  policeHQ: { x: 3050, y: 1850, name: 'SBPD Headquarters', blurb: 'Do not park here' },
+  hospital: { x: 3650, y: 770, name: 'Bay General Hospital', blurb: 'You wake up here' },
+  policeHQ: { x: 3050, y: 1970, name: 'SBPD Headquarters', blurb: 'Do not park here' },
   stadium: { x: 4250, y: 2450, name: 'Solmar Stadium', blurb: 'Home of the Waves' },
   plaza: { x: 2150, y: 1850, name: 'Sun Plaza', blurb: 'Downtown heart' },
 };
@@ -81,6 +81,11 @@ export function createCity(random) {
       const cy = by + bh / 2;
       const district = districtAt(cx, cy);
       const style = DISTRICT_STYLES[district.id];
+      // The safehouse block stays open: Danny's driveway, no buildings to box the car in.
+      if (PLACES.safehouse.x >= bx && PLACES.safehouse.x < bx + bw && PLACES.safehouse.y >= by && PLACES.safehouse.y < by + bh) {
+        lots.push({ x: bx, y: by, w: bw, h: bh });
+        continue;
+      }
       const roll = random();
       if (roll < 0.12) {
         // A park: grass, paths and a ring of palms.
@@ -133,7 +138,21 @@ export function createCity(random) {
   buildings.push({ x: 3520, y: 520, w: 260, h: 200, floors: 5, wall: '#e8f0f2', roof: '#c84a4a', district: 'oldtown', landmark: 'hospital' });
   buildings.push({ x: 2920, y: 1720, w: 260, h: 200, floors: 4, wall: '#b8c8d8', roof: '#2e4a6b', district: 'downtown', landmark: 'police' });
 
-  return { buildings, parks, lots, trees, crates };
+  // No building may cover a named place: every mission target must be reachable on
+  // foot and by car, so clear a ring around each one.
+  const clear = [];
+  for (const b of buildings) {
+    if (b.landmark) { clear.push(b); continue; }
+    let blocked = false;
+    for (const place of Object.values(PLACES)) {
+      const nx = Math.max(b.x, Math.min(place.x, b.x + b.w));
+      const ny = Math.max(b.y, Math.min(place.y, b.y + b.h));
+      if (Math.hypot(place.x - nx, place.y - ny) < 110) { blocked = true; break; }
+    }
+    if (!blocked) clear.push(b);
+  }
+
+  return { buildings: clear, parks, lots, trees, crates };
 }
 
 /** The building (or crate) containing the point, or null. */

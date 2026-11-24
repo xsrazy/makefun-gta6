@@ -88,7 +88,9 @@ export function driveCar(car, throttle, steer, dt, city, handbrake) {
   const hitBuilding = resolveSolidCollision(city, car);
   if (hitWall || hitBuilding) {
     const impact = Math.abs(car.speed);
-    if (impact > 140) damageCar(car, (impact - 140) * 0.12);
+    // Patrol cars are built for this: they shrug off most of a building hit.
+    const damageScale = car.driver === 'police' ? 0.3 : 1;
+    if (impact > 140) damageCar(car, (impact - 140) * 0.12 * damageScale);
     car.speed *= -0.25;
     car.x = beforeX + (car.x - beforeX) * 0.4;
     car.y = beforeY + (car.y - beforeY) * 0.4;

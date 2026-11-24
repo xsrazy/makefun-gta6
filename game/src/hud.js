@@ -162,7 +162,7 @@ export function createHud() {
     ctx.restore();
     text(ctx, 'N', MAP.x + MAP.w - 8, MAP.y + 14, 12, '#ffffff', 'right', 700);
     const district = districtAt(p.x, p.y);
-    text(ctx, district.name.toUpperCase(), MAP.x + 2, MAP.y + MAP.h + 20, 13, PALETTE.text, 'left', 700);
+    text(ctx, district.name.toUpperCase(), MAP.x + 2, MAP.y - 10, 13, PALETTE.text, 'left', 700);
   }
 
   function drawWantedAndMoney(ctx, state) {
@@ -365,9 +365,9 @@ export function createHud() {
       drawWantedAndMoney(ctx, state);
       drawMissionTracker(ctx, state);
       drawSpeedAndHints(ctx, state, ui.hint);
+      drawObjectiveArrow(ctx, state, ui.objective);
       drawDialog(ctx, state);
       drawBanner(ctx, state);
-      drawObjectiveArrow(ctx, state, ui.objective);
       if (!state.player.car) drawCrosshair(ctx, ui.mouse);
       // District arrival card.
       const district = districtAt(state.player.x, state.player.y);

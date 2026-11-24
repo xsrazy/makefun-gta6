@@ -42,6 +42,7 @@ function randomSeed() {
 
 function runShot(name) {
   const world = createWorld(seed, null);
+  window.__world = world;
   const scene = stageShot(name, world);
   const state = world.state;
   const ui = {
@@ -67,6 +68,8 @@ function runShot(name) {
 function runGame() {
   const input = createInput(canvas);
   let world = createWorld(seed, null);
+  // Debug hook for the playtest driver: the live world, readable from the console.
+  window.__world = world;
   let screen = SCREEN_TITLE;
   let showControls = false;
   let saveMessage = null;
@@ -83,6 +86,7 @@ function runGame() {
     audio.unlock();
     audio.click();
     world = createWorld(randomSeed(), null);
+    window.__world = world;
     screen = SCREEN_PLAY;
     announce('Playing Solmar Bay. Mission 1: First Wheels.');
   }
@@ -92,6 +96,7 @@ function runGame() {
     audio.click();
     const save = loadGame();
     world = createWorld(randomSeed(), save);
+    window.__world = world;
     screen = SCREEN_PLAY;
     announce('Continuing Solmar Bay.');
   }
@@ -222,10 +227,9 @@ function runGame() {
 
   function stepGame(dt) {
     const controls = buildControls();
-    // Edge-triggered presses belong to exactly one fixed step, not every step this frame.
     const events = world.step(controls, dt);
-    controls.enter = false;
-    controls.punch = false;
+    // Edge-triggered presses belong to exactly one fixed step, not every step this frame.
+    input.consumeEdges();
     handleEvents(events);
     // Continuous sounds follow the state.
     const p = world.state.player;

@@ -49,7 +49,7 @@ export const CAR_TYPES = {
   taxi:    { name: 'City Cab',        length: 52, width: 26, accel: 430, topSpeed: 440, turn: 2.6, grip: 6.5, health: 100, colors: ['#f2c230'] },
   van:     { name: 'Harbor Van',      length: 60, width: 28, accel: 300, topSpeed: 340, turn: 2.1, grip: 5.5, health: 150, colors: ['#e8e8e8', '#6b7f9e', '#b08a5a'] },
   sports:  { name: 'Vortex R',        length: 50, width: 26, accel: 680, topSpeed: 640, turn: 3.2, grip: 8.0, health: 80,  colors: ['#ff3b30', '#1f6fff', '#ffd60a', '#111111'] },
-  cruiser: { name: 'SBPD Interceptor', length: 54, width: 27, accel: 580, topSpeed: 580, turn: 3.0, grip: 7.5, health: 160, colors: ['#101418'] },
+  cruiser: { name: 'SBPD Interceptor', length: 54, width: 27, accel: 580, topSpeed: 580, turn: 3.0, grip: 7.5, health: 300, colors: ['#101418'] },
 };
 
 /** Heat points at which each wanted star lights up (index = stars). */
@@ -91,7 +91,7 @@ export const PALETTE = {
   panel: 'rgba(12, 18, 24, 0.82)',
   accent: '#ffb347',
   star: '#ffd60a',
-  starEmpty: '#5a5348',
+  starEmpty: '#3a352c',
   health: '#7ee787',
   healthLow: '#ff6b5e',
   cash: '#7ee787',

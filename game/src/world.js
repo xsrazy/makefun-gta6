@@ -87,6 +87,7 @@ export function createWorld(seed, saveData) {
       car: null,
       punchTimer: 0,
       shootTimer: 0,
+      hurtTimer: 0,
       aimAngle: 0,
       dead: false,
     },
@@ -140,8 +141,8 @@ export function createWorld(seed, saveData) {
       state.packages[i].found = saveData.packagesFound[i];
     }
   }
-  // Danny's own sedan, parked outside the safehouse.
-  const ownCar = createCar('sedan', PLACES.safehouse.x + 60, PLACES.safehouse.y + 40, Math.PI / 2, '#4f7ec9', 'parked');
+  // Danny's own sedan, parked outside the safehouse, facing the road east.
+  const ownCar = createCar('sedan', PLACES.safehouse.x + 70, PLACES.safehouse.y + 20, 0, '#4f7ec9', 'parked');
   ownCar.id = state.nextCarId++;
   state.cars.push(ownCar);
 
@@ -309,7 +310,11 @@ export function createWorld(seed, saveData) {
       if (other === car || other.dead) continue;
       if (Math.hypot(other.x - car.x, other.y - car.y) < 120) damageCar(other, 60);
     }
-    addHeat(state, WANTED.explosion);
+    // An explosion only raises the heat when the player caused it (shot the car up
+    // recently, or it was the player's own car): a patrol car wrecking itself on a
+    // building is the SBPD's problem, not Danny's.
+    const playerCaused = car.driver === 'player' || (car.playerDamagedAt !== undefined && state.time - car.playerDamagedAt < 10);
+    if (playerCaused && d < 600) addHeat(state, WANTED.explosion);
     state.cars = state.cars.filter((c) => c !== car);
     if (p.car === car) {
       p.car = null;
@@ -323,6 +328,7 @@ export function createWorld(seed, saveData) {
     let events = 0;
     p.punchTimer = Math.max(0, p.punchTimer - dt);
     p.shootTimer = Math.max(0, p.shootTimer - dt);
+    p.hurtTimer = Math.max(0, p.hurtTimer - dt);
 
     if (p.car) {
       const car = p.car;
@@ -462,7 +468,9 @@ export function createWorld(seed, saveData) {
           damageCar(b, (impact - 170) * 0.1);
           addParticles((a.x + b.x) / 2, (a.y + b.y) / 2, 6, '#ffd60a', 130, 0.35, 4);
           if ((a.driver === 'player' && b.driver === 'police') || (b.driver === 'player' && a.driver === 'police')) {
-            addHeat(state, WANTED.hitPoliceCar);
+            // Ramming a patrol car is a crime, but not one per impact: at most one
+            // every few seconds, or a pile-up maxes the wanted level by itself.
+            if (state.time - state.lastCrimeAt > 3) addHeat(state, WANTED.hitPoliceCar);
           }
         }
       }
@@ -483,11 +491,13 @@ export function createWorld(seed, saveData) {
           }
         }
       }
-      // Cars against the player on foot.
-      if (!p.car && Math.hypot(p.x - car.x, p.y - car.y) < car.radius * 0.85) {
+      // Cars against the player on foot: a hit hurts, then a short grace window
+      // so one car cannot run the player down in a single second.
+      if (!p.car && p.hurtTimer <= 0 && Math.hypot(p.x - car.x, p.y - car.y) < car.radius * 0.85) {
         const impact = Math.abs(car.speed);
         if (impact > 60) {
           p.health -= Math.round(impact * 0.06);
+          p.hurtTimer = 0.8;
           p.vx = Math.cos(car.angle) * 260;
           p.vy = Math.sin(car.angle) * 260;
           addParticles(p.x, p.y, 8, '#ff5a4d', 140, 0.5, 4);
@@ -605,6 +615,7 @@ export function createWorld(seed, saveData) {
       },
       carHit: (car, damage, owner) => {
         damageCar(car, damage);
+        if (owner === 'player') car.playerDamagedAt = state.time;
         addParticles(car.x, car.y, 4, '#ffd60a', 110, 0.3, 3);
         if (owner === 'player' && car.driver === 'police') addHeat(state, WANTED.hitPoliceCar);
         if (owner === 'player' && car.driver === 'traffic' && witnessNearby(car.x, car.y)) addHeat(state, 8);

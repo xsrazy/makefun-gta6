@@ -57,6 +57,10 @@ export function createInput(canvas) {
     wasPressed(code) {
       return pressed.has(code);
     },
+    /** Clear the edge flags now, so a second fixed step in the same frame sees no press. */
+    consumeEdges() {
+      pressed.clear();
+    },
     /** The one-shot presses since the last call, as ACTION_* flags. */
     takeActions() {
       const taken = actions;

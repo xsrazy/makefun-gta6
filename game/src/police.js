@@ -4,6 +4,7 @@
 // officers on foot draw their pistols. Get caught standing still and it is over.
 
 import { ROADS, SHORE, WANTED, WANTED_HEAT, WORLD } from './config.js';
+import { solidAt } from './city.js';
 import { createCar, driveCar } from './vehicles.js';
 
 export function starsForHeat(heat) {
@@ -104,15 +105,31 @@ export function updatePoliceCar(car, state, dt) {
   const predict = 0.35;
   const tx = target.x + (target.vx ?? 0) * predict;
   const ty = target.y + (target.vy ?? 0) * predict;
-  const desired = Math.atan2(ty - car.y, tx - car.x);
+  let desired = Math.atan2(ty - car.y, tx - car.x);
+  // Look ahead on three feelers: a building in the way means steering around it
+  // toward the clear side, and braking, not ploughing through it.
+  let avoiding = false;
+  const probe = (angleOff, dist) => {
+    const a = car.angle + angleOff;
+    return !!solidAt(state.city, car.x + Math.cos(a) * dist, car.y + Math.sin(a) * dist);
+  };
+  if (probe(0, 170) || probe(-0.35, 150) || probe(0.35, 150)) {
+    avoiding = true;
+    const leftClear = !probe(-0.8, 160);
+    desired = car.angle + (leftClear ? -1.0 : 1.0);
+  }
   let diff = desired - car.angle;
   while (diff > Math.PI) diff -= Math.PI * 2;
   while (diff < -Math.PI) diff += Math.PI * 2;
   const steer = Math.max(-1, Math.min(1, diff * 2.4));
   const dist = Math.hypot(target.x - car.x, target.y - car.y);
   let throttle = 1;
+  if (avoiding) throttle = 0.3;
   if (dist < 60) throttle = 0.7;
   if (Math.abs(diff) > 1.2 && car.speed > 200) throttle = 0.2;
+  // A player on foot gets approached, not run down at full speed: ease off close in
+  // so the officers can step out and make the arrest instead.
+  if (!p.car && dist < 220) throttle = Math.min(throttle, 0.25);
   const crashed = driveCar(car, throttle, steer, dt, state.city, false);
   car.sirenFlash = (state.time * 6 + car.id) % 2 < 1;
   return crashed;
