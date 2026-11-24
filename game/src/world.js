@@ -196,19 +196,12 @@ export function createWorld(seed, audio, saveData = null) {
     const wy = input.mouse.y + world.camera.y - world.view.h / 2;
     player.aimAngle = Math.atan2(wy - player.y, wx - player.x);
     player.shootTimer -= dt;
-    if (player.reloading) {
-      player.reloadTimer -= dt;
-      if (player.reloadTimer <= 0) {
-        player.reloading = false;
-        player.ammo = PLAYER.magSize;
-      }
-    } else if (input.mouse.down && player.shootTimer <= 0) {
+    if (!player.reloading && input.mouse.down && player.shootTimer <= 0) {
       if (player.ammo > 0) {
         player.ammo -= 1;
         player.shootTimer = 0.18;
         world.stats.shotsFired += 1;
         world.fireBullet(player.x, player.y, player.aimAngle, { from: 'player' });
-        world.addHeat(0, '');
         // Firing near an officer draws attention.
         const copNear = world.cars.some((c) => c.driver === 'cop' && Math.hypot(c.x - player.x, c.y - player.y) < 500);
         if (copNear && world.heat < 100) world.addHeat(6, 'shots fired');
@@ -234,12 +227,23 @@ export function createWorld(seed, audio, saveData = null) {
       player.reloading = true;
       player.reloadTimer = PLAYER.reloadTime;
     }
+    // The reload countdown ticks whether on foot or behind the wheel.
+    if (player.reloading) {
+      player.reloadTimer -= dt;
+      if (player.reloadTimer <= 0) {
+        player.reloading = false;
+        player.ammo = PLAYER.magSize;
+      }
+    }
 
     if (player.onFoot) {
       updatePlayerOnFoot(dt, input);
       audio.setEngine(0, false);
     } else if (player.car) {
       drivePlayerCar(player.car, dt, input, city, world);
+      // The drive may have wrecked the car (exitCar nulls player.car), so
+      // re-check before touching it again.
+      if (!player.car) return;
       player.x = player.car.x;
       player.y = player.car.y;
       player.angle = player.car.angle;
@@ -315,6 +319,7 @@ export function createWorld(seed, audio, saveData = null) {
     },
     setHeat(value) {
       world.heat = value;
+      world.lastCrimeAt = world.time; // setting heat counts as a fresh crime
       if (value <= 0) audio.setSiren(false);
     },
     setWantedStars(stars) {

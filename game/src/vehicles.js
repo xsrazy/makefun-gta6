@@ -160,8 +160,10 @@ export function drivePlayerCar(car, dt, input, city, world) {
   const vx = Math.cos(car.angle) * car.speed;
   const vy = Math.sin(car.angle) * car.speed;
   const moved = city.moveCircle(car.x, car.y, vx * dt, vy * dt, 18);
-  if (moved.blocked && Math.abs(car.speed) > 120) {
-    car.hp -= 12;
+  car.crashCooldown = Math.max(0, (car.crashCooldown ?? 0) - dt);
+  if (moved.blocked && Math.abs(car.speed) > 120 && car.crashCooldown <= 0) {
+    car.hp -= 8;
+    car.crashCooldown = 0.6; // one impact, one dent — no drain while wedged
     world.onCrash(car.x, car.y, Math.abs(car.speed));
     car.speed *= -0.25;
   }

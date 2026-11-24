@@ -23,6 +23,7 @@ export function addHeat(world, amount, reason) {
 
 export function setWanted(world, stars) {
   world.heat = Math.min(POLICE.maxStars, stars) * POLICE.heatPerStar;
+  world.lastCrimeAt = world.time; // fresh heat, so it does not decay at once
   if (stars > 0) world.audio.setSiren(true);
 }
 
@@ -80,6 +81,12 @@ function chasePlayer(car, dt, world) {
       player.car.hp -= 26 * dt;
       car.hp -= 8 * dt;
       if (Math.random() < dt * 4) world.onCrash(car.x, car.y, 200);
+      if (player.car.hp <= 0 && !player.car.dead) {
+        player.car.dead = true;
+        player.car.speed = 0;
+        player.car.smoke = 1;
+        world.onCarDestroyed(player.car);
+      }
     }
   }
   // At 3 stars and up, patrol cars shoot from the window.

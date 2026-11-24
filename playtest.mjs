@@ -145,6 +145,10 @@ async function main() {
     await sleep(300);
     check('E enters the nearest car', (await cdp.eval('!window.__game.world.player.onFoot')) === true);
 
+    // Line the car up on a road facing east, so the drive is not at the
+    // mercy of the parked car's random heading.
+    await cdp.eval(`(() => { const w = window.__game.world; w.debug.teleport(1250, w.city.roadsH[3]); w.player.car.angle = 0; })()`);
+    await sleep(200);
     await cdp.hold('KeyW', 'w', 1600);
     const speed = await cdp.eval('Math.abs(window.__game.world.player.car.speed)');
     check('car accelerates with W', speed > 120, `${Math.round(speed)} px/s`);
