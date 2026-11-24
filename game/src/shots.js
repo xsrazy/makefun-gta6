@@ -1,79 +1,76 @@
-// The screenshot scenes behind ?shot=start|play|end. Each one plays the real rules forward from a
-// fresh world for a fixed number of steps, steered by a simple autopilot (look ahead each way the
-// paddle could move, keep clear of blocks, chase the lowest coin when that is safe), so the frame
-// is what a short game really looks like and the same seed always gives the same frame.
-import { FIELD, PLAYER, STEP } from './config.js';
-import { EVENT_OVER, KIND_BLOCK } from './world.js';
-import { SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE } from './render.js';
+// Neon Harbor — the screenshot scenes behind ?shot=start|street|chase|mission.
+// Each one stages the real game (a real car, real cops, a real mission in
+// progress) and then lets it run forward a few seconds, so the captured frame
+// is a moment of genuine play and the same seed always gives the same frame.
 
-const START_SECONDS = 5;
-const PLAY_SECONDS = 26;
-const END_LIMIT_SECONDS = 600;
-/**
- * How far ahead, in seconds, the autopilot checks each way it could move: the play scene's pilot
- * looks well ahead and keeps all its lives; the end scene's looks only a moment ahead, so it is
- * caught out once the blocks speed up, as a hurried player is.
- */
-const HORIZON_PLAY = 0.7;
-const HORIZON_END = 0.25;
-const SAMPLE = 1 / 30;
-const DIRECTIONS = [0, -1, 1];
-/** Extra room, each side, it keeps between the paddle and a block. */
-const MARGIN = 10;
+import { makeCar } from './vehicles.js';
 
-/** Seconds until moving in `direction` (-1, 0, 1) runs the paddle into a block; Infinity when it never does. */
-function timeToHit(state, direction, horizon) {
-  const player = state.player;
-  for (let t = SAMPLE; t <= horizon; t += SAMPLE) {
-    const x = Math.min(FIELD.width - player.width, Math.max(0, player.x + direction * PLAYER.speed * t));
-    for (let index = 0; index < state.items.length; index += 1) {
-      const item = state.items[index];
-      if (!item.active || item.kind !== KIND_BLOCK) continue;
-      const y = item.y + item.speed * t;
-      if (y + item.height > player.y && y < player.y + player.height && item.x < x + player.width + MARGIN && item.x + item.width > x - MARGIN) return t;
-    }
-  }
-  return Infinity;
+export const FAKE_MOUSE = { x: 900, y: 400, down: false };
+
+export function fakeInput(driving) {
+  return {
+    mouse: FAKE_MOUSE,
+    isDown: () => false,
+    axes: () => (driving ? { x: 0, y: -1 } : { x: 0, y: 0 }),
+    sprint: () => false,
+    handbrake: () => false,
+    takeActions: () => 0,
+    takeClick: () => false,
+  };
 }
 
-/** Of the safe ways to move, the one toward the lowest coin (or the centre); else the one that is hit last. */
-function autopilot(state, horizon) {
-  const player = state.player;
-  let coin = null;
-  for (let index = 0; index < state.items.length; index += 1) {
-    const item = state.items[index];
-    if (item.active && item.kind !== KIND_BLOCK && (coin === null || item.y > coin.y)) coin = item;
-  }
-  const target = coin === null ? FIELD.width / 2 : coin.x + coin.width / 2;
-  const centre = player.x + player.width / 2;
-  const wanted = target > centre + 8 ? 1 : target < centre - 8 ? -1 : 0;
-  let best = wanted;
-  let bestTime = timeToHit(state, wanted, horizon);
-  for (let index = 0; index < DIRECTIONS.length && bestTime !== Infinity; index += 1) {
-    const time = timeToHit(state, DIRECTIONS[index], horizon);
-    if (time > bestTime) {
-      bestTime = time;
-      best = DIRECTIONS[index];
-    }
-  }
-  return best;
+function putPlayerInCar(world, x, y, angle) {
+  const car = world.cars.find((c) => c.driver === 'parked' && !c.dead) || world.cars[0];
+  car.x = x;
+  car.y = y;
+  car.angle = angle;
+  car.speed = 0;
+  world.player.x = x;
+  world.player.y = y;
+  world.enterCar(car);
+  world.camera.x = x;
+  world.camera.y = y;
 }
 
-/**
- * Set `world` to the named scene (start, play or end; any other name is start) and return the
- * screen to draw over it and the best score to show.
- */
+function spawnChasers(world, count) {
+  const player = world.player;
+  for (let i = 0; i < count; i++) {
+    const behind = i % 2 === 0 ? -1 : 1;
+    const car = makeCar(
+      player.x - Math.cos(player.angle) * (180 + i * 90) + behind * 60,
+      player.y - Math.sin(player.angle) * (180 + i * 90),
+      player.angle,
+      { driver: 'cop', color: '#14213d', siren: true, cruise: 430 },
+    );
+    car.speed = 300;
+    world.cars.push(car);
+  }
+}
+
+// Stage the named scene and return how to play it forward: the screen to
+// show, how many 1/60 s steps to run, and whether the autopilot drives.
 export function stageShot(name, world) {
-  world.reset();
-  if (name !== 'play' && name !== 'end') {
-    for (let index = 0; index < START_SECONDS / STEP; index += 1) world.step(STEP, 0, true);
-    return { screen: SCREEN_TITLE, best: 0 };
+  const roadY = world.city.roadsH[3];
+  if (name === 'street') {
+    putPlayerInCar(world, 1250, roadY, 0);
+    world.say('Downtown, midday. The city is yours — drive anywhere.');
+    return { screen: 'playing', steps: 180, driving: true };
   }
-  const limit = name === 'end' ? END_LIMIT_SECONDS : PLAY_SECONDS;
-  const horizon = name === 'end' ? HORIZON_END : HORIZON_PLAY;
-  for (let index = 0; index < limit / STEP; index += 1) {
-    if (world.step(STEP, autopilot(world.state, horizon), false) & EVENT_OVER) break;
+  if (name === 'chase') {
+    putPlayerInCar(world, 1250, roadY, 0);
+    world.missions.start(3); // Heat Wave: three stars, patrol cars inbound.
+    spawnChasers(world, 4);
+    world.flash('3 STARS — LOSE THE HEAT', '#ff5964');
+    return { screen: 'playing', steps: 150, driving: true };
   }
-  const over = world.state.lives === 0;
-  return { screen: over ? SCREEN_OVER : SCREEN_PLAY, best: world.state.score };
+  if (name === 'mission') {
+    world.missions.start(2); // Collect the Debt: four armed thugs at the warehouse.
+    const at = world.city.landmarks.warehouse;
+    world.debug.teleport(at.x - 260, at.y + 40);
+    world.player.aimAngle = 0;
+    world.say('Marisol Vega: The Dockside crew owes twelve hundred. Collect it.');
+    return { screen: 'playing', steps: 90, driving: false };
+  }
+  // 'start' and anything else: the title screen over a living city.
+  return { screen: 'title', steps: 150, driving: false };
 }
